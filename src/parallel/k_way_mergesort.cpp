@@ -13,7 +13,7 @@ static constexpr int TASK_THRESHOLD = 64;
 
 void parallel_k_way_mergesort(std::vector<int> &array, const int k) {
     std::vector helper(array);
-    #pragma omp parallel default(none) shared(array, helper, k)
+    #pragma omp parallel default(none) shared(array, helper) firstprivate(k)
     #pragma omp single
     divide(array, helper, k, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
 }
@@ -34,7 +34,7 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int k, cons
             for (int i = 0; i < k; i++) {
                 const int new_part_start = i * partitions_size + start;
                 const int new_part_end = new_part_start - 1 + (i == k - 1 ? last_partition_size : partitions_size);
-                #pragma omp task default(none) shared(array, helper, k, new_part_start, new_part_end)
+                #pragma omp task default(none) shared(array, helper) firstprivate(k, new_part_start, new_part_end)
                 divide(array, helper, k, new_part_start, new_part_end);
             }
             #pragma omp taskwait
