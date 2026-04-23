@@ -14,7 +14,7 @@ public:
     int_generator(int64_t min, int64_t max) : m_uniform_distribution(min, max) {
     }
 
-    IntType operator ()() {
+    IntType operator()() {
         return m_uniform_distribution(m_rng);
     }
 };
