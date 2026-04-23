@@ -1,15 +1,17 @@
-#include "mergesort.hpp"
+#include "parallel_mergesort_ranks.hpp"
+#include "parallel_merge.hpp"
+#include <omp.h>
 
 static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
 static void merge(std::vector<int> &array, std::vector<int> &helper, int left, int mid, int right);
 
 static constexpr int TASK_THRESHOLD = 64;
 
-void parallel_mergesort(std::vector<int> &array) {
+void parallel_mergesort_ranks(std::vector<int> &array) {
     std::vector helper(array);
     #pragma omp parallel default(none) shared(array, helper)
     #pragma omp single
-    divide(array, helper, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
+    divide(array, helper, 0, array.size() - 1);  // NOLINT(*-narrowing-conversions)
 }
 
 void divide(std::vector<int> &array, std::vector<int> &helper, const int left, const int right) {
@@ -35,24 +37,10 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int left, c
 }
 
 void merge(std::vector<int> &array, std::vector<int> &helper, const int left, const int mid, const int right) {
-    int i = left;
-    int j = mid + 1;
-    int k = left;
 
-    while (i <= mid && j <= right) {
-        if (array[i] <= array[j]) {
-            helper[k++] = array[i++];
-        } else {
-            helper[k++] = array[j++];
-        }
-    }
-
-    while (i <= mid) {
-        helper[k++] = array[i++];
-    }
-
-    while (j <= right) {
-        helper[k++] = array[j++];
+    #pragma omp taskgroup
+    {
+        parallel_merge_ranks(array, helper, left, mid, mid + 1, right, left);
     }
 
     #pragma omp parallel default(none) shared(array, helper, left, right)

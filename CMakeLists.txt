@@ -13,11 +13,15 @@ add_executable(
     src/parallel/k_way_mergesort.hpp
     src/parallel/mergesort.cpp
     src/parallel/mergesort.hpp
+    src/parallel/parallel_merge.hpp
+    src/parallel/parallel_merge.cpp
     src/sequential/k_way_mergesort.cpp
     src/sequential/k_way_mergesort.hpp
     src/sequential/mergesort.cpp
     src/sequential/mergesort.hpp
     src/util.hpp
+        src/parallel/parallel_mergesort_ranks.cpp
+        src/parallel/parallel_mergesort_ranks.hpp
 )
 
 target_link_libraries(dsp_hw1 PUBLIC OpenMP::OpenMP_CXX)
