@@ -43,7 +43,7 @@ void merge(std::vector<int> &array, std::vector<int> &helper, const int left, co
         parallel_merge_ranks(array, helper, left, mid, mid + 1, right, left);
     }
 
-    #pragma omp parallel default(none) shared(array, helper, left, right)
+    #pragma omp parallel for default(none) shared(array, helper, left, right)
     for (int l = left; l <= right; l++) {
         array[l] = helper[l];
     }

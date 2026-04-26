@@ -55,7 +55,7 @@ void merge(std::vector<int> &array, std::vector<int> &helper, const int left, co
         helper[k++] = array[j++];
     }
 
-    #pragma omp parallel default(none) shared(array, helper, left, right)
+    #pragma omp parallel for default(none) shared(array, helper, left, right)
     for (int l = left; l <= right; l++) {
         array[l] = helper[l];
     }
