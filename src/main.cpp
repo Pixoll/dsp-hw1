@@ -7,11 +7,11 @@
 #include <vector>
 
 #include "util.hpp"
-#include "parallel/k_way_mergesort.hpp"
-#include "parallel/mergesort.hpp"
-#include "parallel/parallel_mergesort_ranks.hpp"
-#include "sequential/k_way_mergesort.hpp"
-#include "sequential/mergesort.hpp"
+#include "parallel_merge_sort/k_way_mergesort.hpp"
+#include "parallel_merge_sort/mergesort.hpp"
+#include "parallel_merge_sort/parallel_mergesort_ranks.hpp"
+#include "sequential_merge_sort/k_way_mergesort.hpp"
+#include "sequential_merge_sort/mergesort.hpp"
 
 struct Result {
     const double time;

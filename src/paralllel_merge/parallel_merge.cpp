@@ -7,8 +7,7 @@ static int binary_search_rank(int x, const std::vector<int> &A, int left, int ri
     int low = left;
     int high = std::max(left, right + 1);
     while (low < high) {
-        int mid = low + (high - low) / 2;
-        if (A[mid] < x) low = mid + 1;
+        if (const int mid = low + (high - low) / 2; A[mid] < x) low = mid + 1;
         else high = mid;
     }
     return low;

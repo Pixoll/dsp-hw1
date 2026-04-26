@@ -1,5 +1,5 @@
 #include "parallel_mergesort_ranks.hpp"
-#include "parallel_merge.hpp"
+#include "../paralllel_merge/parallel_merge.hpp"
 #include <omp.h>
 
 static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
