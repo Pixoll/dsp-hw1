@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <omp.h>
@@ -16,63 +17,55 @@
 #include "sequential/mergesort.hpp"
 
 struct Result {
-    double time;
-    bool correct;
+    double time = -1;
+    double speedup = -1;
+    double efficiency = -1;
+    int p = -1;
     int k = -1;
+    bool correct = false;
+
+    void calculate_measurements(const Result &ref) {
+        if (p != -1 && time != -1 && ref.p == -1 && ref.time != -1) {
+            speedup = ref.time / time;
+            efficiency = speedup / p;
+        }
+    }
 };
 
 template<typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
-    if (v.empty()) {
-        return out;
-    }
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
 
-    out << '[';
-    for (int i = 0; i < v.size(); ++i) {
-        out << v[i] << ", ";
-    }
-    return out << "\b\b]";
-}
-
-std::ostream &operator<<(std::ostream &out, const Result &r) {
-    return out << r.correct << " (" << r.time << " s)";
-}
+std::ostream &operator<<(std::ostream &out, const Result &r);
 
 Result benchmark(
     const std::function<void(std::vector<int> &)> &fn,
     const std::vector<int> &array,
     const std::vector<int> &sorted
-) {
-    std::vector copy(array);
+);
 
-    const double start_time = omp_get_wtime();
-    fn(copy);
-    const double end_time = omp_get_wtime();
-
-    return {
-        .time = end_time - start_time,
-        .correct = copy == sorted,
-    };
-}
+Result benchmark(
+    const std::function<void(std::vector<int> &)> &fn,
+    const std::vector<int> &array,
+    const std::vector<int> &sorted,
+    int p,
+    const Result &ref
+);
 
 Result benchmark(
     const std::function<void(std::vector<int> &, int)> &fn,
     const std::vector<int> &array,
-    const int k,
+    int k,
     const std::vector<int> &sorted
-) {
-    std::vector copy(array);
+);
 
-    const double start_time = omp_get_wtime();
-    fn(copy, k);
-    const double end_time = omp_get_wtime();
-
-    return {
-        .time = end_time - start_time,
-        .correct = copy == sorted,
-        .k = k,
-    };
-}
+Result benchmark(
+    const std::function<void(std::vector<int> &, int)> &fn,
+    const std::vector<int> &array,
+    int k,
+    const std::vector<int> &sorted,
+    int p,
+    const Result &ref
+);
 
 int main() {
     const int max_threads = omp_get_max_threads();
@@ -85,7 +78,7 @@ int main() {
         threads.emplace_back(max_threads);
     }
 
-    std::cout << std::boolalpha;
+    std::cout << std::boolalpha << std::fixed << std::setprecision(6);
 
     for (int size = 2; size <= 26; size += 2) {
         std::cout <<
@@ -138,23 +131,49 @@ int main() {
             omp_set_num_threads(t);
 
             std::cout << "sorting regular parallel" << std::endl;
-            const Result &regular_parallel_result = benchmark(parallel_mergesort, array, sorted);
+            const Result &regular_parallel_result = benchmark(
+                parallel_mergesort,
+                array,
+                sorted,
+                t,
+                regular_sequential_result
+            );
 
             std::array<Result, ks.size()> k_way_parallel_results{};
             for (int i = 0; i < ks.size(); i++) {
                 const int k = ks[i];
                 std::cout << "sorting k-way (" << k << ") parallel" << std::endl;
-                k_way_parallel_results[i] = benchmark(parallel_k_way_mergesort, array, k, sorted);
+                k_way_parallel_results[i] = benchmark(
+                    parallel_k_way_mergesort,
+                    array,
+                    k,
+                    sorted,
+                    t,
+                    k_way_sequential_results[i]
+                );
             }
 
             std::cout << "sorting ranks parallel" << std::endl;
-            const Result &ranks_parallel_result = benchmark(parallel_ranks_mergesort, array, sorted);
+            const Result &ranks_parallel_result = benchmark(
+                parallel_ranks_mergesort,
+                array,
+                sorted,
+                t,
+                regular_sequential_result
+            );
 
             std::array<Result, ks.size()> ranks_k_way_parallel_results{};
             for (int i = 0; i < ks.size(); i++) {
                 const int k = ks[i];
                 std::cout << "sorting ranks + k-way (" << k << ") parallel" << std::endl;
-                ranks_k_way_parallel_results[i] = benchmark(parallel_ranks_k_way_mergesort, array, k, sorted);
+                ranks_k_way_parallel_results[i] = benchmark(
+                    parallel_ranks_k_way_mergesort,
+                    array,
+                    k,
+                    sorted,
+                    t,
+                    k_way_sequential_results[i]
+                );
             }
 
             std::cout << "\n"
@@ -177,4 +196,115 @@ int main() {
     }
 
     return 0;
+}
+
+template<typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
+    if (v.empty()) {
+        return out;
+    }
+
+    out << '[';
+    for (int i = 0; i < v.size(); ++i) {
+        out << v[i] << ", ";
+    }
+    return out << "\b\b]";
+}
+
+std::ostream &operator<<(std::ostream &out, const Result &r) {
+    out << "correct: " << r.correct << "  |  time: " << std::setw(9) << r.time << " s";
+
+    if (r.speedup != -1) {
+        out << "  |  speedup: " << std::setw(9) << r.speedup;
+    }
+
+    if (r.efficiency != -1) {
+        out << "  |  efficiency: " << r.efficiency;
+    }
+
+    return out;
+}
+
+Result benchmark(
+    const std::function<void(std::vector<int> &)> &fn,
+    const std::vector<int> &array,
+    const std::vector<int> &sorted
+) {
+    std::vector copy(array);
+
+    const double start_time = omp_get_wtime();
+    fn(copy);
+    const double end_time = omp_get_wtime();
+
+    return {
+        .time = end_time - start_time,
+        .correct = copy == sorted,
+    };
+}
+
+Result benchmark(
+    const std::function<void(std::vector<int> &)> &fn,
+    const std::vector<int> &array,
+    const std::vector<int> &sorted,
+    const int p,
+    const Result &ref
+) {
+    std::vector copy(array);
+
+    const double start_time = omp_get_wtime();
+    fn(copy);
+    const double end_time = omp_get_wtime();
+
+    Result result = {
+        .time = end_time - start_time,
+        .p = p,
+        .correct = copy == sorted,
+    };
+    result.calculate_measurements(ref);
+
+    return result;
+}
+
+Result benchmark(
+    const std::function<void(std::vector<int> &, int)> &fn,
+    const std::vector<int> &array,
+    const int k,
+    const std::vector<int> &sorted
+) {
+    std::vector copy(array);
+
+    const double start_time = omp_get_wtime();
+    fn(copy, k);
+    const double end_time = omp_get_wtime();
+
+    return {
+        .time = end_time - start_time,
+        .k = k,
+        .correct = copy == sorted,
+    };
+}
+
+Result benchmark(
+    const std::function<void(std::vector<int> &, int)> &fn,
+    const std::vector<int> &array,
+    const int k,
+    const std::vector<int> &sorted,
+    const int p,
+    const Result &ref
+) {
+    std::vector copy(array);
+
+    const double start_time = omp_get_wtime();
+    fn(copy, k);
+    const double end_time = omp_get_wtime();
+
+    Result result = {
+        .time = end_time - start_time,
+        .p = p,
+        .k = k,
+        .correct = copy == sorted,
+    };
+    result.calculate_measurements(ref);
+
+    return result;
 }
