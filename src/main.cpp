@@ -25,10 +25,14 @@ struct Result {
     bool correct = false;
 
     void calculate_measurements(const Result &ref) {
-        if (p != -1 && time != -1 && ref.p == -1 && ref.time != -1) {
+        if (p != -1 && timed() && ref.p == 1 && ref.timed()) {
             speedup = ref.time / time;
             efficiency = speedup / p;
         }
+    }
+
+    [[nodiscard]] bool timed() const {
+        return time != -1;
     }
 };
 
@@ -74,7 +78,7 @@ int main() {
     for (int t = 1; t <= max_threads; t *= 2) {
         threads.emplace_back(t);
     }
-    if (threads[threads.size() - 1] != max_threads) {
+    if (threads.back() != max_threads) {
         threads.emplace_back(max_threads);
     }
 
@@ -121,6 +125,11 @@ int main() {
 
         std::cout << std::endl;
 
+        Result p1_regular_parallel_result;
+        std::array<Result, ks.size()> p1_k_way_parallel_results;
+        Result p1_ranks_parallel_result;
+        std::array<Result, ks.size()> p1_ranks_k_way_parallel_results;
+
         for (const int &t: threads) {
             std::cout <<
                 "--+----+----+----+----+----+----+----+----+----+--\n"
@@ -136,10 +145,13 @@ int main() {
                 array,
                 sorted,
                 t,
-                regular_sequential_result
+                p1_regular_parallel_result
             );
+            if (!p1_regular_parallel_result.timed()) {
+                p1_regular_parallel_result = regular_parallel_result;
+            }
 
-            std::array<Result, ks.size()> k_way_parallel_results{};
+            std::array<Result, ks.size()> k_way_parallel_results;
             for (int i = 0; i < ks.size(); i++) {
                 const int k = ks[i];
                 std::cout << "sorting k-way (" << k << ") parallel" << std::endl;
@@ -149,8 +161,11 @@ int main() {
                     k,
                     sorted,
                     t,
-                    k_way_sequential_results[i]
+                    p1_k_way_parallel_results[i]
                 );
+                if (!p1_k_way_parallel_results[i].timed()) {
+                    p1_k_way_parallel_results[i] = k_way_parallel_results[i];
+                }
             }
 
             std::cout << "sorting ranks parallel" << std::endl;
@@ -159,10 +174,13 @@ int main() {
                 array,
                 sorted,
                 t,
-                regular_sequential_result
+                p1_ranks_parallel_result
             );
+            if (!p1_ranks_parallel_result.timed()) {
+                p1_ranks_parallel_result = ranks_parallel_result;
+            }
 
-            std::array<Result, ks.size()> ranks_k_way_parallel_results{};
+            std::array<Result, ks.size()> ranks_k_way_parallel_results;
             for (int i = 0; i < ks.size(); i++) {
                 const int k = ks[i];
                 std::cout << "sorting ranks + k-way (" << k << ") parallel" << std::endl;
@@ -172,8 +190,11 @@ int main() {
                     k,
                     sorted,
                     t,
-                    k_way_sequential_results[i]
+                    p1_ranks_k_way_parallel_results[i]
                 );
+                if (!p1_ranks_k_way_parallel_results[i].timed()) {
+                    p1_ranks_k_way_parallel_results[i] = ranks_k_way_parallel_results[i];
+                }
             }
 
             std::cout << "\n"
