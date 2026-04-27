@@ -5,7 +5,7 @@
 static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
 static void merge(std::vector<int> &array, std::vector<int> &helper, int left, int mid, int right);
 
-static constexpr int TASK_THRESHOLD = 64;
+static constexpr int TASK_THRESHOLD = 8192;
 
 void parallel_mergesort_ranks(std::vector<int> &array) {
     std::vector helper(array);
@@ -43,8 +43,5 @@ void merge(std::vector<int> &array, std::vector<int> &helper, const int left, co
         parallel_merge_ranks(array, helper, left, mid, mid + 1, right, left);
     }
 
-    #pragma omp parallel for default(none) shared(array, helper, left, right)
-    for (int l = left; l <= right; l++) {
-        array[l] = helper[l];
-    }
+    std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
 }

@@ -30,7 +30,7 @@ void parallel_merge_ranks(const std::vector<int> &src, std::vector<int> &dest, i
     int n1 = r1 - l1 + 1;
     int n2 = r2 - l2 + 1;
 
-    static constexpr int MERGE_THRESHOLD = 64;
+    static constexpr int MERGE_THRESHOLD = 2048;
     if (n1 + n2 < MERGE_THRESHOLD) {
         sequential_merge(src, dest, l1, r1, l2, r2, out_pos);
         return;
