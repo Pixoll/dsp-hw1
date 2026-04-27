@@ -57,7 +57,7 @@ void divide(
             #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, depth)
             divide(array, helper, k, current, p_end, depth + 1);
         } else {
-            divide(array, helper, k, current, p_end, depth + 1);
+            std::sort(array.begin() + current, array.begin() + p_end + 1);
         }
 
         current = p_end + 1;
@@ -79,5 +79,13 @@ void merge(
         parallel_ranks_k_way_merge(array, helper, partitions, left);
     }
 
-    std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
+    const int total_size = right - left + 1;
+    if (total_size > 100000) {
+        #pragma omp parallel for schedule(static)
+        for (int i = 0; i < total_size; ++i) {
+            array[left + i] = helper[left + i];
+        }
+    } else {
+        std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
+    }
 }
