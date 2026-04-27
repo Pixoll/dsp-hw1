@@ -1,34 +1,39 @@
 #include "mergesort.hpp"
 #include <algorithm>
 
-static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
+static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right, int threshold);
 static void merge(std::vector<int> &array, std::vector<int> &helper, int left, int mid, int right);
 
-static constexpr int TASK_THRESHOLD = 8192;
-
 void parallel_mergesort(std::vector<int> &array) {
-    std::vector helper(array);
-    #pragma omp parallel default(none) shared(array, helper)
-    #pragma omp single
-    divide(array, helper, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
+    parallel_mergesort(array, 8192); // NOLINT(*-narrowing-conversions)
 }
 
-void divide(std::vector<int> &array, std::vector<int> &helper, const int left, const int right) {
+void parallel_mergesort(std::vector<int> &array, int threshold) {
+    std::vector helper(array);
+    #pragma omp parallel default(none) shared(array, helper, threshold)
+    #pragma omp single
+    divide(array, helper, 0, array.size() - 1, threshold); // NOLINT(*-narrowing-conversions)
+}
+
+void divide(std::vector<int> &array, std::vector<int> &helper, const int left, const int right, const int threshold) {
     if (left >= right) {
         return;
     }
 
-    if (const int size = right - left; size < TASK_THRESHOLD) {
-        std::sort(array.begin() + left, array.begin() + right + 1);
-        return;
+    const int size = right - left;
+
+    if (size < threshold) {
+       std::sort(array.begin() + left, array.begin() + right + 1);
+       return;
     }
+
     const int mid = left + (right - left) / 2;
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(left, mid)
-    divide(array, helper, left, mid);
+    #pragma omp task default(none) shared(array, helper) firstprivate(left, mid, threshold)
+    divide(array, helper, left, mid, threshold);
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(mid, right)
-    divide(array, helper, mid + 1, right);
+    #pragma omp task default(none) shared(array, helper) firstprivate(mid, right, threshold)
+    divide(array, helper, mid + 1, right, threshold);
 
     #pragma omp taskwait
 

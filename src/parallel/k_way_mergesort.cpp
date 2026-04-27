@@ -4,20 +4,22 @@
 #include <limits>
 #include <vector>
 
-static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int start, int end);
+static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int start, int end, int threshold);
 
 static void merge(std::vector<int> &array, std::vector<int> &helper, int k, int low, int high);
 
-static constexpr int TASK_THRESHOLD = 8192;
-
 void parallel_k_way_mergesort(std::vector<int> &array, const int k) {
-    std::vector helper(array);
-    #pragma omp parallel default(none) shared(array, helper) firstprivate(k)
-    #pragma omp single
-    divide(array, helper, k, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
+    parallel_k_way_mergesort(array, k, 8192); // NOLINT(*-narrowing-conversions)
 }
 
-void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int start, const int end) {
+void parallel_k_way_mergesort(std::vector<int> &array, const int k, const int threshold) {
+    std::vector helper(array);
+    #pragma omp parallel default(none) shared(array, helper) firstprivate(k, threshold)
+    #pragma omp single
+    divide(array, helper, k, 0, array.size() - 1, threshold); // NOLINT(*-narrowing-conversions)
+}
+
+void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int start, const int end, const int threshold) {
     const int size = end - start + 1;
     const int partitions_size = std::max(size / k, 1);
     const int last_partition_size = size - partitions_size * (k - 1);
@@ -26,11 +28,11 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int 
         for (int i = 0; i < k; i++) {
             const int new_part_start = i * partitions_size + start;
             const int new_part_end = new_part_start - 1 + (i == k - 1 ? last_partition_size : partitions_size);
-            if (partitions_size < TASK_THRESHOLD) {
-                divide(array, helper, k, new_part_start, new_part_end);
+            if (partitions_size < threshold) {
+                divide(array, helper, k, new_part_start, new_part_end, threshold);
             } else {
-                #pragma omp task default(none) shared(array, helper) firstprivate(k, new_part_start, new_part_end)
-                divide(array, helper, k, new_part_start, new_part_end);
+                #pragma omp task default(none) shared(array, helper) firstprivate(k, new_part_start, new_part_end, threshold)
+                divide(array, helper, k, new_part_start, new_part_end, threshold);
             }
         }
         #pragma omp taskwait

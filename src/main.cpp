@@ -24,6 +24,10 @@ struct Result {
     int k = -1;
     bool correct = false;
 
+    [[nodiscard]] bool timed() const {
+        return time != -1;
+    }
+
     void calculate_measurements(const Result &ref) {
         if (p > 1 && timed() && ref.p == 1 && ref.timed()) {
             speedup = ref.time / time;
@@ -33,10 +37,6 @@ struct Result {
 
     [[nodiscard]] bool measured() const {
         return speedup != -1 && efficiency != -1;
-    }
-
-    [[nodiscard]] bool timed() const {
-        return time != -1;
     }
 };
 
@@ -135,7 +135,7 @@ int main() {
         std::array<Result, ks.size()> p1_k_way_parallel_results;
         Result p1_ranks_parallel_result;
         std::array<Result, ks.size()> p1_ranks_k_way_parallel_results;
-
+        
         for (const int &t: threads) {
             std::cout <<
                 "--+----+----+----+----+----+----+----+----+----+--\n"
@@ -147,7 +147,7 @@ int main() {
 
             std::cout << "sorting regular parallel" << std::endl;
             const Result &regular_parallel_result = benchmark(
-                parallel_mergesort,
+                [](std::vector<int> &arr) { parallel_mergesort(arr); },
                 array,
                 sorted,
                 t,
@@ -157,12 +157,16 @@ int main() {
                 p1_regular_parallel_result = regular_parallel_result;
             }
 
-            std::array<Result, ks.size()> k_way_parallel_results;
+            if (!p1_regular_parallel_result.timed()) {
+                p1_regular_parallel_result = regular_parallel_result;
+            }
+
+            std::array<Result, ks.size()> k_way_parallel_results{};
             for (int i = 0; i < ks.size(); i++) {
                 const int k = ks[i];
                 std::cout << "sorting k-way (" << k << ") parallel" << std::endl;
                 k_way_parallel_results[i] = benchmark(
-                    parallel_k_way_mergesort,
+                    [](std::vector<int> &arr, int k_val) { parallel_k_way_mergesort(arr, k_val); },
                     array,
                     k,
                     sorted,
@@ -219,6 +223,48 @@ int main() {
             }
 
             std::cout << std::endl;
+        }
+
+        if (size == 24){
+            std::cout << "\n==================================================\n";
+            std::cout << "--- ANALISIS DE GRANULARIDAD (Umbrales) ---\n";
+            std::cout << "==================================================\n";
+
+            omp_set_num_threads(max_threads);
+            std::array<int, 5> thresholds{512, 1024, 2048, 4096, 8192};
+
+            for (int thresh : thresholds){
+                std::cout << "\nProbando umbral: " << thresh << " (Con " << max_threads << " hebras)\n";
+                std::cout << "--+----+----+----+----+----+----+----+----+----+--\n";
+
+                auto p_merge_lambda = [thresh](std::vector<int> &arr) { 
+                    parallel_mergesort(arr, thresh); 
+                };
+
+                const Result &p_merge_result = benchmark(
+                    p_merge_lambda,
+                    array,
+                    sorted,
+                    max_threads,
+                    p1_regular_parallel_result
+                );
+
+                std::cout << "parallel mergesort       " << p_merge_result << "\n";
+
+                auto p_kway_lambda = [thresh](std::vector<int> &arr, int k_val) { 
+                    parallel_k_way_mergesort(arr, k_val, thresh); 
+                };
+
+                const Result &p_kway_result = benchmark(
+                    p_kway_lambda,
+                    array,
+                    4, // k = 4
+                    sorted,
+                    max_threads,
+                    p1_k_way_parallel_results[0]
+                );
+                std::cout << "parallel k-way (k = 4)          " << p_kway_result << "\n";
+            }
         }
     }
 
