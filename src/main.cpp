@@ -25,10 +25,14 @@ struct Result {
     bool correct = false;
 
     void calculate_measurements(const Result &ref) {
-        if (p != -1 && timed() && ref.p == 1 && ref.timed()) {
+        if (p > 1 && timed() && ref.p == 1 && ref.timed()) {
             speedup = ref.time / time;
             efficiency = speedup / p;
         }
+    }
+
+    [[nodiscard]] bool measured() const {
+        return speedup != -1 && efficiency != -1;
     }
 
     [[nodiscard]] bool timed() const {
@@ -71,6 +75,8 @@ Result benchmark(
     const Result &ref
 );
 
+constexpr int PRECISION = 9;
+
 int main() {
     const int max_threads = omp_get_max_threads();
     std::vector<int> threads;
@@ -82,7 +88,7 @@ int main() {
         threads.emplace_back(max_threads);
     }
 
-    std::cout << std::boolalpha << std::fixed << std::setprecision(6);
+    std::cout << std::boolalpha << std::fixed << std::setprecision(PRECISION);
 
     for (int size = 2; size <= 26; size += 2) {
         std::cout <<
@@ -233,14 +239,18 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &v) {
 }
 
 std::ostream &operator<<(std::ostream &out, const Result &r) {
-    out << "correct: " << r.correct << "  |  time: " << std::setw(9) << r.time << " s";
-
-    if (r.speedup != -1) {
-        out << "  |  speedup: " << std::setw(9) << r.speedup;
+    if (!r.correct) {
+        out << "\033[1m\033[31m"; // bold red
     }
 
-    if (r.efficiency != -1) {
-        out << "  |  efficiency: " << r.efficiency;
+    out << "correct: " << std::setw(5) << r.correct << "  |  time: " << std::setw(PRECISION + 3) << r.time << " s";
+
+    if (r.measured()) {
+        out << "  |  speedup: " << std::setw(9) << r.speedup << "  |  efficiency: " << r.efficiency;
+    }
+
+    if (!r.correct) {
+        out << "\033[0m"; // reset
     }
 
     return out;
