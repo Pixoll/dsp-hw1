@@ -2,11 +2,12 @@
 
 #include <vector>
 
-#include "../../util.hpp"
-
-void parallel_k_merge_ranks(
+void parallel_ranks_merge(
     const std::vector<int> &array,
     std::vector<int> &helper,
-    const std::vector<Range> &partitions,
+    int l1,
+    int r1,
+    int l2,
+    int r2,
     int start
 );

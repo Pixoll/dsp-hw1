@@ -1,17 +1,18 @@
-#include "../parallel/ranks_mergesort.hpp"
-#include "merge/merge.hpp"
-#include <omp.h>
+#include "ranks_mergesort.hpp"
+
+#include "merge/ranks.hpp"
 
 static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
+
 static void merge(std::vector<int> &array, std::vector<int> &helper, int left, int mid, int right);
 
 static constexpr int TASK_THRESHOLD = 8192;
 
-void parallel_mergesort_ranks(std::vector<int> &array) {
+void parallel_ranks_mergesort(std::vector<int> &array) {
     std::vector helper(array);
     #pragma omp parallel default(none) shared(array, helper)
     #pragma omp single
-    divide(array, helper, 0, array.size() - 1);  // NOLINT(*-narrowing-conversions)
+    divide(array, helper, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
 }
 
 void divide(std::vector<int> &array, std::vector<int> &helper, const int left, const int right) {
@@ -19,10 +20,10 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int left, c
         return;
     }
 
-    const int difference = right - left;
-    const int mid = left + difference / 2;
+    const int size = right - left;
+    const int mid = left + size / 2;
 
-    if (difference < TASK_THRESHOLD) {
+    if (size < TASK_THRESHOLD) {
         divide(array, helper, left, mid);
         divide(array, helper, mid + 1, right);
     } else {
@@ -37,10 +38,9 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int left, c
 }
 
 void merge(std::vector<int> &array, std::vector<int> &helper, const int left, const int mid, const int right) {
-
     #pragma omp taskgroup
     {
-        parallel_merge_ranks(array, helper, left, mid, mid + 1, right, left);
+        parallel_ranks_merge(array, helper, left, mid, mid + 1, right, left);
     }
 
     std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);

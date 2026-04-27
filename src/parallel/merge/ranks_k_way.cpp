@@ -1,4 +1,4 @@
-#include "k_merge.hpp"
+#include "ranks_k_way.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -24,7 +24,7 @@ static void sequential_k_merge(
     int out_pos
 );
 
-void parallel_k_merge_ranks(
+void parallel_ranks_k_way_merge(
     const std::vector<int> &array,
     std::vector<int> &helper,
     const std::vector<Range> &partitions,
@@ -83,10 +83,10 @@ void parallel_k_merge_ranks(
     }
 
     #pragma omp task default(none) shared(array, helper) firstprivate(start, left_parts)
-    parallel_k_merge_ranks(array, helper, left_parts, start);
+    parallel_ranks_k_way_merge(array, helper, left_parts, start);
 
     #pragma omp task default(none) shared(array, helper) firstprivate(final_pos, right_parts)
-    parallel_k_merge_ranks(array, helper, right_parts, final_pos + 1);
+    parallel_ranks_k_way_merge(array, helper, right_parts, final_pos + 1);
 }
 
 int binary_search_rank(const int x, const std::vector<int> &array, const int left, const int right) {

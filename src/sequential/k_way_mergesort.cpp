@@ -13,7 +13,7 @@ void sequential_k_way_mergesort(std::vector<int> &array, const int k) {
     divide(array, helper, k, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
 }
 
-void divide(std::vector<int> &array, std::vector<int> &helper, const int k, const int start, const int end) {
+void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int start, const int end) {
     const int size = end - start + 1;
     const int partitions_size = std::max(size / k, 1);
     const int last_partition_size = size - partitions_size * (k - 1);
@@ -25,7 +25,7 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int k, cons
             divide(array, helper, k, new_part_start, new_part_end);
         }
     } else if (last_partition_size > 1) {
-        divide(array, helper, k, end - last_partition_size, end);
+        start = end - last_partition_size;
     }
 
     merge(array, helper, k, start, end);
@@ -74,7 +74,5 @@ void merge(std::vector<int> &array, std::vector<int> &helper, int k, const int l
         indices[min_position]++;
     }
 
-    for (int i = low; i <= high; i++) {
-        helper[i] = array[i];
-    }
+    std::copy(array.begin() + low, array.begin() + high + 1, helper.begin() + low);
 }

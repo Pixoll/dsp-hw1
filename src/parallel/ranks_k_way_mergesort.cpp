@@ -1,15 +1,25 @@
+#include "ranks_k_way_mergesort.hpp"
+
 #include <algorithm>
 #include <vector>
 
 #include "../util.hpp"
-#include "merge/k_merge.hpp"
+#include "merge/ranks_k_way.hpp"
 
 static constexpr int SORT_THRESHOLD = 4096;
 static constexpr int MAX_DEPTH = 4;
 
 static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int start, int end, int depth);
 
-void parallel_k_way_mergesort_ranks(std::vector<int> &array, const int k) {
+static void merge(
+    std::vector<int> &array,
+    std::vector<int> &helper,
+    int left,
+    int right,
+    const std::vector<Range> &partitions
+);
+
+void parallel_ranks_k_way_mergesort(std::vector<int> &array, const int k) {
     if (array.size() <= 1) return;
 
     std::vector<int> helper(array.size());
@@ -35,13 +45,13 @@ void divide(
         return;
     }
 
-    std::vector<Range> parts;
+    std::vector<Range> partitions;
     int current = start;
 
     for (int i = 0; i < k && current <= end; i++) {
         const int p_size = (end - current + 1) / (k - i);
         const int p_end = current + p_size - 1;
-        parts.push_back({current, p_end});
+        partitions.emplace_back(current, p_end);
 
         if (depth < MAX_DEPTH) {
             #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, depth)
@@ -54,10 +64,20 @@ void divide(
     }
     #pragma omp taskwait
 
+    merge(array, helper, start, end, partitions);
+}
+
+void merge(
+    std::vector<int> &array,
+    std::vector<int> &helper,
+    const int left,
+    const int right,
+    const std::vector<Range> &partitions
+) {
     #pragma omp taskgroup
     {
-        parallel_k_merge_ranks(array, helper, parts, start);
+        parallel_ranks_k_way_merge(array, helper, partitions, left);
     }
 
-    std::copy(helper.begin() + start, helper.begin() + end + 1, array.begin() + start);
+    std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
 }

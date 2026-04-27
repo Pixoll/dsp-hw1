@@ -10,6 +10,7 @@
 #include "util.hpp"
 #include "parallel/k_way_mergesort.hpp"
 #include "parallel/mergesort.hpp"
+#include "parallel/ranks_k_way_mergesort.hpp"
 #include "parallel/ranks_mergesort.hpp"
 #include "sequential/k_way_mergesort.hpp"
 #include "sequential/mergesort.hpp"
@@ -97,8 +98,8 @@ int main() {
                 }
             );
 
-            std::cout << "sorting merge sequential" << std::endl;
-            const Result &sequential_sort_result = benchmark(
+            std::cout << "sorting regular sequential" << std::endl;
+            const Result &regular_sequential_result = benchmark(
                 array,
                 sorted,
                 [](std::vector<int> &a) {
@@ -106,8 +107,8 @@ int main() {
                 }
             );
 
-            std::cout << "sorting merge parallel" << std::endl;
-            const Result &parallel_sort_result = benchmark(
+            std::cout << "sorting regular parallel" << std::endl;
+            const Result &regular_parallel_result = benchmark(
                 array,
                 sorted,
                 [](std::vector<int> &a) {
@@ -116,7 +117,7 @@ int main() {
             );
 
             std::cout << "sorting k-way sequential" << std::endl;
-            const Result &sequential_k_way_sort_result = benchmark(
+            const Result &k_way_sequential_result = benchmark(
                 array,
                 sorted,
                 [](std::vector<int> &a) {
@@ -125,30 +126,40 @@ int main() {
             );
 
             std::cout << "sorting k-way parallel" << std::endl;
-            const Result &parallel_k_way_sort_result = benchmark(
+            const Result &k_way_parallel_result = benchmark(
                 array,
                 sorted,
                 [](std::vector<int> &a) {
                     parallel_k_way_mergesort(a, K);
                 }
-            );
+                );
 
-            std::cout << "sorting ranks merge parallel" << std::endl;
-            const Result &parallel_ranks_sort_result = benchmark(
+            std::cout << "sorting ranks parallel" << std::endl;
+            const Result &ranks_parallel_result = benchmark(
                 array,
                 sorted,
                 [](std::vector<int> &a) {
-                    parallel_mergesort_ranks(a);
+                    parallel_ranks_mergesort(a);
+                }
+                );
+
+            std::cout << "sorting ranks k-way parallel" << std::endl;
+            const Result &ranks_k_way_parallel_result = benchmark(
+                array,
+                sorted,
+                [](std::vector<int> &a) {
+                    parallel_ranks_k_way_mergesort(a, K);
                 }
             );
 
             std::cout << "\n"
-                "control                 " << control_result << "\n"
-                "merge sequential        " << sequential_sort_result << "\n"
-                "merge parallel          " << parallel_sort_result << "\n"
-                "k-way sequential        " << sequential_k_way_sort_result << "\n"
-                "k-way parallel          " << parallel_k_way_sort_result << "\n"
-                "ranks merge parallel    " << parallel_ranks_sort_result << "\n"
+                "control               " << control_result << "\n"
+                "regular sequential    " << regular_sequential_result << "\n"
+                "regular parallel      " << regular_parallel_result << "\n"
+                "k-way sequential      " << k_way_sequential_result << "\n"
+                "k-way parallel        " << k_way_parallel_result << "\n"
+                "ranks parallel        " << ranks_parallel_result << "\n"
+                "ranks k-way parallel  " << ranks_k_way_parallel_result << "\n"
                 << std::endl;
         }
 
@@ -156,7 +167,7 @@ int main() {
             break;
         }
 
-        threads = std::max(threads * 2, max_threads);
+        threads = std::min(threads * 2, max_threads);
     }
 
     return 0;

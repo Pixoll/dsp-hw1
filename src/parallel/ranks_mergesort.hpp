@@ -2,4 +2,4 @@
 
 #include <vector>
 
-void parallel_mergesort_ranks(std::vector<int> &array);
+void parallel_ranks_mergesort(std::vector<int> &array);

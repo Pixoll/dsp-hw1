@@ -43,7 +43,5 @@ void merge(std::vector<int> &array, std::vector<int> &helper, const int left, co
         helper[k++] = array[j++];
     }
 
-    for (i = left; i <= right; i++) {
-        array[i] = helper[i];
-    }
+    std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
 }
