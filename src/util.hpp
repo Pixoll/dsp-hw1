@@ -2,8 +2,14 @@
 
 #include <random>
 
-#define MIN(a, b) ((a) < (b) ? a : b)
-#define MAX(a, b) ((a) > (b) ? a : b)
+struct Range {
+    int start;
+    int end;
+
+    [[nodiscard]] int size() const {
+        return end >= start ? end - start + 1 : 0;
+    }
+};
 
 template<typename IntType>
 class int_generator {

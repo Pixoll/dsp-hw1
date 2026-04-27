@@ -3,11 +3,11 @@
 #include <omp.h>
 
 
-static int binary_search_rank(int x, const std::vector<int> &A, int left, int right) {
+static int binary_search_rank(int x, const std::vector<int> &array, int left, int right) {
     int low = left;
     int high = std::max(left, right + 1);
     while (low < high) {
-        if (const int mid = low + (high - low) / 2; A[mid] < x) low = mid + 1;
+        if (const int mid = low + (high - low) / 2; array[mid] < x) low = mid + 1;
         else high = mid;
     }
     return low;

@@ -1,4 +1,4 @@
-#include "mergesort.hpp"
+#include "../sequential/mergesort.hpp"
 
 static void divide(std::vector<int> &array, std::vector<int> &helper, int left, int right);
 
