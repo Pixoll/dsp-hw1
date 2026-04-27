@@ -13,8 +13,6 @@ struct MaxPivot {
 reduction(maxpivot : MaxPivot : omp_out = (omp_in.max_size > omp_out.max_size) ? omp_in : omp_out) \
 initializer(omp_priv = {-1, -1})
 
-static constexpr int K_MERGE_THRESHOLD = 16384;
-
 static int binary_search_rank(int x, const std::vector<int> &array, int left, int right);
 
 static void sequential_k_merge(
@@ -28,7 +26,8 @@ void parallel_ranks_k_way_merge(
     const std::vector<int> &array,
     std::vector<int> &helper,
     const std::vector<Range> &partitions,
-    const int start
+    const int start,
+    const int g_threshold
 ) {
     const int k = partitions.size(); // NOLINT(*-narrowing-conversions)
     int total_elements = 0;
@@ -48,7 +47,7 @@ void parallel_ranks_k_way_merge(
         }
     }
 
-    if (total_elements < K_MERGE_THRESHOLD) {
+    if (total_elements < g_threshold) {
         sequential_k_merge(array, helper, partitions, start);
         return;
     }
@@ -57,7 +56,7 @@ void parallel_ranks_k_way_merge(
     const int mid_in_list = partitions[pivot_list_idx].start + max_pivot.max_size / 2;
     const int x = array[mid_in_list];
 
-    std::vector<int> split_indices(k);
+    int split_indices[k];
     int global_rank = 0;
 
     #pragma omp parallel for default(none) shared(k, x, array, partitions, split_indices) reduction(+:global_rank)
@@ -82,11 +81,11 @@ void parallel_ranks_k_way_merge(
         right_parts[i].end = partitions[i].end;
     }
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(start, left_parts)
-    parallel_ranks_k_way_merge(array, helper, left_parts, start);
+    #pragma omp task default(none) shared(array, helper) firstprivate(start, left_parts, g_threshold)
+    parallel_ranks_k_way_merge(array, helper, left_parts, start, g_threshold);
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(final_pos, right_parts)
-    parallel_ranks_k_way_merge(array, helper, right_parts, final_pos + 1);
+    #pragma omp task default(none) shared(array, helper) firstprivate(final_pos, right_parts, g_threshold)
+    parallel_ranks_k_way_merge(array, helper, right_parts, final_pos + 1, g_threshold);
 }
 
 int binary_search_rank(const int x, const std::vector<int> &array, const int left, const int right) {
@@ -112,7 +111,7 @@ void sequential_k_merge(
     const int out_pos
 ) {
     const int k = partitions.size(); // NOLINT(*-narrowing-conversions)
-    std::vector<int> current_indices(k);
+    int current_indices[k];
     for (int i = 0; i < k; ++i) {
         current_indices[i] = partitions[i].start;
     }

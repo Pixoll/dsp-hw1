@@ -8,5 +8,6 @@ void parallel_ranks_k_way_merge(
     const std::vector<int> &array,
     std::vector<int> &helper,
     const std::vector<Range> &partitions,
-    int start
+    int start,
+    int g_threshold
 );

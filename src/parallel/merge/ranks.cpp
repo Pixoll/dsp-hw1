@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <vector>
 
-static constexpr int MERGE_THRESHOLD = 8192;
-
 static int binary_search_rank(int x, const std::vector<int> &array, int left, int right);
 
 static void sequential_merge(
@@ -24,12 +22,13 @@ void parallel_ranks_merge(
     int r1,
     int l2,
     int r2,
-    const int start
+    const int start,
+    const int g_threshold
 ) {
     int n1 = r1 - l1 + 1;
     int n2 = r2 - l2 + 1;
 
-    if (n1 + n2 < MERGE_THRESHOLD) {
+    if (n1 + n2 < g_threshold) {
         sequential_merge(array, helper, l1, r1, l2, r2, start);
         return;
     }
@@ -50,11 +49,11 @@ void parallel_ranks_merge(
     const int pos = start + (mid1 - l1) + (mid2 - l2);
     helper[pos] = x;
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(l1, mid1, l2, mid2, start)
-    parallel_ranks_merge(array, helper, l1, mid1 - 1, l2, mid2 - 1, start);
+    #pragma omp task default(none) shared(array, helper) firstprivate(l1, mid1, l2, mid2, start, g_threshold)
+    parallel_ranks_merge(array, helper, l1, mid1 - 1, l2, mid2 - 1, start, g_threshold);
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(mid1, r1, mid2, r2, pos)
-    parallel_ranks_merge(array, helper, mid1 + 1, r1, mid2, r2, pos + 1);
+    #pragma omp task default(none) shared(array, helper) firstprivate(mid1, r1, mid2, r2, pos, g_threshold)
+    parallel_ranks_merge(array, helper, mid1 + 1, r1, mid2, r2, pos + 1, g_threshold);
 }
 
 int binary_search_rank(const int x, const std::vector<int> &array, const int left, const int right) {

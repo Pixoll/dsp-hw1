@@ -9,5 +9,6 @@ void parallel_ranks_merge(
     int r1,
     int l2,
     int r2,
-    int start
+    int start,
+    int g_threshold
 );

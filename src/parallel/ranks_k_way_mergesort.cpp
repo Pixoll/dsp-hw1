@@ -6,65 +6,55 @@
 #include "../util.hpp"
 #include "merge/ranks_k_way.hpp"
 
-static constexpr int SORT_THRESHOLD = 4096;
-static constexpr int MAX_DEPTH = 4;
-
-static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int start, int end, int depth);
+static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int left, int right, int g_threshold);
 
 static void merge(
     std::vector<int> &array,
     std::vector<int> &helper,
     int left,
     int right,
-    const std::vector<Range> &partitions
+    const std::vector<Range> &partitions,
+    int g_threshold
 );
 
-void parallel_ranks_k_way_mergesort(std::vector<int> &array, const int k) {
-    if (array.size() <= 1) return;
-
+void parallel_ranks_k_way_mergesort(std::vector<int> &array, const int k, const int g_threshold) {
     std::vector<int> helper(array.size());
 
-    #pragma omp parallel default(none) shared(array, helper) firstprivate(k)
+    #pragma omp parallel default(none) shared(array, helper) firstprivate(k, g_threshold)
     #pragma omp single
-    divide(array, helper, k, 0, array.size() - 1, 0); // NOLINT(*-narrowing-conversions)
+    divide(array, helper, k, 0, array.size() - 1, g_threshold); // NOLINT(*-narrowing-conversions)
 }
 
 void divide(
     std::vector<int> &array,
     std::vector<int> &helper,
     const int k,
-    const int start,
-    const int end,
-    const int depth
+    const int left,
+    const int right,
+    const int g_threshold
 ) {
-    const int size = end - start + 1;
-    if (size <= 1) return;
-
-    if (size < SORT_THRESHOLD) {
-        std::sort(array.begin() + start, array.begin() + end + 1);
+    if (right - left < g_threshold) {
+        std::sort(array.begin() + left, array.begin() + right + 1);
+        std::copy(array.begin() + left, array.begin() + right + 1, helper.begin() + left);
         return;
     }
 
     std::vector<Range> partitions;
-    int current = start;
+    int current = left;
 
-    for (int i = 0; i < k && current <= end; i++) {
-        const int p_size = (end - current + 1) / (k - i);
+    for (int i = 0; i < k && current <= right; i++) {
+        const int p_size = (right - current + 1) / (k - i);
         const int p_end = current + p_size - 1;
         partitions.emplace_back(current, p_end);
 
-        if (depth < MAX_DEPTH) {
-            #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, depth)
-            divide(array, helper, k, current, p_end, depth + 1);
-        } else {
-            std::sort(array.begin() + current, array.begin() + p_end + 1);
-        }
+        #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, g_threshold)
+        divide(array, helper, k, current, p_end, g_threshold);
 
         current = p_end + 1;
     }
     #pragma omp taskwait
 
-    merge(array, helper, start, end, partitions);
+    merge(array, helper, left, right, partitions, g_threshold);
 }
 
 void merge(
@@ -72,20 +62,13 @@ void merge(
     std::vector<int> &helper,
     const int left,
     const int right,
-    const std::vector<Range> &partitions
+    const std::vector<Range> &partitions,
+    const int g_threshold
 ) {
     #pragma omp taskgroup
     {
-        parallel_ranks_k_way_merge(array, helper, partitions, left);
+        parallel_ranks_k_way_merge(array, helper, partitions, left, g_threshold);
     }
 
-    const int total_size = right - left + 1;
-    if (total_size > 100000) {
-        #pragma omp parallel for schedule(static)
-        for (int i = 0; i < total_size; ++i) {
-            array[left + i] = helper[left + i];
-        }
-    } else {
-        std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
-    }
+    std::copy(helper.begin() + left, helper.begin() + right + 1, array.begin() + left);
 }

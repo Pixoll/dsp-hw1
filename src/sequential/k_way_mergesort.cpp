@@ -4,35 +4,35 @@
 #include <limits>
 #include <vector>
 
-static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int start, int end);
+static void divide(std::vector<int> &array, std::vector<int> &helper, int k, int left, int right);
 
-static void merge(std::vector<int> &array, std::vector<int> &helper, int k, int low, int high);
+static void merge(std::vector<int> &array, std::vector<int> &helper, int k, int left, int right);
 
 void sequential_k_way_mergesort(std::vector<int> &array, const int k) {
     std::vector helper(array);
     divide(array, helper, k, 0, array.size() - 1); // NOLINT(*-narrowing-conversions)
 }
 
-void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int start, const int end) {
-    const int size = end - start + 1;
+void divide(std::vector<int> &array, std::vector<int> &helper, const int k, int left, const int right) {
+    const int size = right - left + 1;
     const int partitions_size = std::max(size / k, 1);
     const int last_partition_size = size - partitions_size * (k - 1);
 
     if (partitions_size > 1) {
         for (int i = 0; i < k; i++) {
-            const int new_part_start = i * partitions_size + start;
+            const int new_part_start = i * partitions_size + left;
             const int new_part_end = new_part_start - 1 + (i == k - 1 ? last_partition_size : partitions_size);
             divide(array, helper, k, new_part_start, new_part_end);
         }
     } else if (last_partition_size > 1) {
-        start = end - last_partition_size;
+        left = right - last_partition_size;
     }
 
-    merge(array, helper, k, start, end);
+    merge(array, helper, k, left, right);
 }
 
-void merge(std::vector<int> &array, std::vector<int> &helper, int k, const int low, const int high) {
-    const int size = high - low + 1;
+void merge(std::vector<int> &array, std::vector<int> &helper, int k, const int left, const int right) {
+    const int size = right - left + 1;
     if (size < k) {
         k = size;
     }
@@ -45,12 +45,12 @@ void merge(std::vector<int> &array, std::vector<int> &helper, int k, const int l
         indices[i] = 0;
     }
 
-    int count = low;
+    int count = left;
 
-    while (count <= high) {
+    while (count <= right) {
         int min = std::numeric_limits<int>::max();
         int min_position = 0;
-        int current_part = low;
+        int current_part = left;
 
         for (int i = 0; i < k; i++) {
             if (i == k - 1 && indices[i] == last_partition_size) {
@@ -74,5 +74,5 @@ void merge(std::vector<int> &array, std::vector<int> &helper, int k, const int l
         indices[min_position]++;
     }
 
-    std::copy(array.begin() + low, array.begin() + high + 1, helper.begin() + low);
+    std::copy(array.begin() + left, array.begin() + right + 1, helper.begin() + left);
 }

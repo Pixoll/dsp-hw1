@@ -2,5 +2,4 @@
 
 #include <vector>
 
-void parallel_mergesort(std::vector<int> &array, int threshold);
-void parallel_mergesort(std::vector<int> &array); // NOLINT(*-narrowing-conversions)
+void parallel_mergesort(std::vector<int> &array, int g_threshold);
