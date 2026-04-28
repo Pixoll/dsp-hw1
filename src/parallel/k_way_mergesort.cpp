@@ -24,12 +24,6 @@ void divide(
     const int right,
     const int g_threshold
 ) {
-    if (right - left < g_threshold) {
-        std::sort(array.begin() + left, array.begin() + right + 1);
-        std::copy(array.begin() + left, array.begin() + right + 1, helper.begin() + left);
-        return;
-    }
-
     const int size = right - left + 1;
     const int partitions_size = std::max(size / k, 1);
     const int last_partition_size = size - partitions_size * (k - 1);
@@ -38,10 +32,14 @@ void divide(
         for (int i = 0; i < k; i++) {
             const int new_part_start = i * partitions_size + left;
             const int new_part_end = new_part_start - 1 + (i == k - 1 ? last_partition_size : partitions_size);
-            #pragma omp task default(none) \
+            if (right - left < g_threshold) {
+                divide(array, helper, k, new_part_start, new_part_end, g_threshold);
+            } else {
+                #pragma omp task default(none) \
                     shared(array, helper) \
                     firstprivate(k, new_part_start, new_part_end, g_threshold)
-            divide(array, helper, k, new_part_start, new_part_end, g_threshold);
+                divide(array, helper, k, new_part_start, new_part_end, g_threshold);
+            }
         }
         #pragma omp taskwait
     } else if (last_partition_size > 1) {

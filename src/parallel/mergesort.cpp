@@ -18,18 +18,18 @@ void divide(std::vector<int> &array, std::vector<int> &helper, const int left, c
         return;
     }
 
-    if (right - left < g_threshold) {
-        std::sort(array.begin() + left, array.begin() + right + 1);
-        return;
-    }
-
     const int mid = left + (right - left) / 2;
 
-    #pragma omp task default(none) shared(array, helper) firstprivate(left, mid, g_threshold)
-    divide(array, helper, left, mid, g_threshold);
-    #pragma omp task default(none) shared(array, helper) firstprivate(mid, right, g_threshold)
-    divide(array, helper, mid + 1, right, g_threshold);
-    #pragma omp taskwait
+    if (right - left < g_threshold) {
+        divide(array, helper, left, mid, g_threshold);
+        divide(array, helper, mid + 1, right, g_threshold);
+    } else {
+        #pragma omp task default(none) shared(array, helper) firstprivate(left, mid, g_threshold)
+        divide(array, helper, left, mid, g_threshold);
+        #pragma omp task default(none) shared(array, helper) firstprivate(mid, right, g_threshold)
+        divide(array, helper, mid + 1, right, g_threshold);
+        #pragma omp taskwait
+    }
 
     merge(array, helper, left, mid, right);
 }

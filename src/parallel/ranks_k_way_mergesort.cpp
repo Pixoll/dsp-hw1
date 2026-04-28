@@ -33,9 +33,7 @@ void divide(
     const int right,
     const int g_threshold
 ) {
-    if (right - left < g_threshold) {
-        std::sort(array.begin() + left, array.begin() + right + 1);
-        std::copy(array.begin() + left, array.begin() + right + 1, helper.begin() + left);
+    if (left >= right) {
         return;
     }
 
@@ -47,8 +45,12 @@ void divide(
         const int p_end = current + p_size - 1;
         partitions.emplace_back(current, p_end);
 
-        #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, g_threshold)
-        divide(array, helper, k, current, p_end, g_threshold);
+        if (right - left < g_threshold) {
+            divide(array, helper, k, current, p_end, g_threshold);
+        } else {
+            #pragma omp task default(none) shared(array, helper) firstprivate(k, current, p_end, g_threshold)
+            divide(array, helper, k, current, p_end, g_threshold);
+        }
 
         current = p_end + 1;
     }
