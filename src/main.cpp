@@ -100,6 +100,11 @@ private:
     }
 };
 
+template<typename T>
+std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
+
+std::ostream &operator<<(std::ostream &out, const Result &r);
+
 std::ofstream &operator<<(std::ofstream &out, const Result &r) {
     out << r.type << ","
         << r.correct << ","
@@ -127,6 +132,11 @@ std::ofstream &operator<<(std::ofstream &out, const Result &r) {
         << r.time_quartiles[2] << ","
         << r.time_quartiles[3] << ","
         << r.time_quartiles[4] << "\n";
+
+    if (!r.correct) {
+        std::cout << r << "\n";
+    }
+
     return out;
 }
 
@@ -137,11 +147,6 @@ std::ofstream &operator<<(std::ofstream &out, const std::array<Result, N> &resul
     }
     return out;
 }
-
-template<typename T>
-std::ostream &operator<<(std::ostream &out, const std::vector<T> &v);
-
-std::ostream &operator<<(std::ostream &out, const Result &r);
 
 Result benchmark(
     const char *type,
@@ -358,7 +363,13 @@ std::ostream &operator<<(std::ostream &out, const Result &r) {
         out << "\033[1m\033[31m"; // bold red
     }
 
-    out << "correct: " << std::setw(5) << r.correct
+    out << "type: " << std::setw(30) << r.type;
+
+    if (r.k != -1) {
+        out << "  |  k: " << std::setw(2) << r.k;
+    }
+
+    out << "  |  correct: " << std::setw(5) << r.correct
         << "  |  time: ~" << std::setw(PRECISION + 3) << r.time_mean << " s";
 
     if (r.measured()) {
