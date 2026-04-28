@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -19,7 +20,7 @@
 #include "sequential/mergesort.hpp"
 
 constexpr auto CSV_COLS = "type,correct,n,k,p,s,e,g_threshold,t_mean,t_stdev,t_q0,t_q1,t_q2,t_q3,t_q4";
-constexpr int BENCH_SAMPLES = 10;
+constexpr int BENCH_SAMPLES = 4;
 constexpr int PRECISION = 9;
 
 struct Result {
@@ -186,14 +187,14 @@ Result benchmark(
 );
 
 int main(const int argc, const char *argv[]) {
-    const int max_threads = omp_get_max_threads();
+    const int max_threads = std::min(omp_get_max_threads(), 8);
 
     if (argc > 1) {
         const char *type = argv[1];
 
         omp_set_num_threads(max_threads);
-        constexpr int k = 32;
-        constexpr int g_threshold = 1 << 14;
+        constexpr int k = 16;
+        constexpr int g_threshold = 1 << 12;
         constexpr int size = 26;
 
         std::vector<int> array(1 << size);
@@ -241,21 +242,22 @@ int main(const int argc, const char *argv[]) {
     for (int t = 1; t <= max_threads; t *= 2) {
         threads.emplace_back(t);
     }
-    if (threads.back() != max_threads) {
-        threads.emplace_back(max_threads);
-    }
 
     // ReSharper disable once CppTooWideScope
-    constexpr std::array ks{4, 8, 16, 32};
-    constexpr std::array g_thresholds{1 << 10, 1 << 12, 1 << 14};
+    constexpr std::array ks{4, 8};
+    constexpr std::array g_thresholds{1 << 10, 1 << 12};
 
-    std::ofstream time_data("../data/measurements.csv");
+    if (!std::filesystem::exists("data")) {
+        std::filesystem::create_directory("data");
+    }
+
+    std::ofstream time_data("data/measurements.csv");
     time_data << "type,correct,n,k,p,s,e,g_threshold,t_mean,t_stdev,t_q0,t_q1,t_q2,t_q3,t_q4\n";
 
     std::cout << std::boolalpha << std::fixed << std::setprecision(PRECISION);
     time_data << std::fixed << std::setprecision(PRECISION);
 
-    for (int size = 16; size <= 26; size += 2) {
+    for (int size = 20; size <= 26; size += 2) {
         std::cout << "\n"
             "==================================================\n"
             "\n"

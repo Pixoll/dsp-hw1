@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 3.5)
 project(dsp_hw1)
 
 set(CMAKE_CXX_STANDARD 23)
