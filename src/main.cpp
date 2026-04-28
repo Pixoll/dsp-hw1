@@ -193,7 +193,7 @@ int main(const int argc, const char *argv[]) {
         const char *type = argv[1];
 
         omp_set_num_threads(max_threads);
-        constexpr int k = 16;
+        constexpr int k = 8;
         constexpr int g_threshold = 1 << 12;
         constexpr int size = 26;
 

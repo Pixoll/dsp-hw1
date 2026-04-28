@@ -1,0 +1,89 @@
++ cd build
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 sequential_mergesort
+
+ Performance counter stats for './dsp_hw1 sequential_mergesort':
+
+    28,482,186,928      cycles
+    34,195,155,609      instructions                     #    1.20  insn per cycle
+       529,017,520      cache-references
+        29,025,413      cache-misses                     #    5.49% of all cache refs
+
+       6.126911133 seconds time elapsed
+
+       5.878302000 seconds user
+       0.248054000 seconds sys
+
+
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 sequential_k_way_mergesort
+
+ Performance counter stats for './dsp_hw1 sequential_k_way_mergesort':
+
+    26,424,714,678      cycles
+    90,428,285,067      instructions                     #    3.42  insn per cycle
+       264,882,220      cache-references
+        16,195,703      cache-misses                     #    6.11% of all cache refs
+
+       5.683599609 seconds time elapsed
+
+       5.442330000 seconds user
+       0.241014000 seconds sys
+
+
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 parallel_mergesort
+
+ Performance counter stats for './dsp_hw1 parallel_mergesort':
+
+    29,026,280,143      cycles
+    33,607,027,545      instructions                     #    1.16  insn per cycle
+       533,804,936      cache-references
+        36,147,631      cache-misses                     #    6.77% of all cache refs
+
+       1.987701291 seconds time elapsed
+
+       6.039308000 seconds user
+       0.234778000 seconds sys
+
+
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 parallel_k_way_mergesort
+
+ Performance counter stats for './dsp_hw1 parallel_k_way_mergesort':
+
+    31,551,154,714      cycles
+    90,473,331,970      instructions                     #    2.87  insn per cycle
+       283,701,720      cache-references
+        22,979,232      cache-misses                     #    8.10% of all cache refs
+
+       1.792587723 seconds time elapsed
+
+       6.818606000 seconds user
+       0.258401000 seconds sys
+
+
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 parallel_ranks_mergesort
+
+ Performance counter stats for './dsp_hw1 parallel_ranks_mergesort':
+
+    32,917,262,780      cycles
+    36,788,117,719      instructions                     #    1.12  insn per cycle
+       607,409,681      cache-references
+        68,833,077      cache-misses                     #   11.33% of all cache refs
+
+       1.888119638 seconds time elapsed
+
+       6.818144000 seconds user
+       0.293963000 seconds sys
+
+
++ sudo perf stat -e cycles,instructions,cache-references,cache-misses ./dsp_hw1 parallel_ranks_k_way_mergesort
+
+ Performance counter stats for './dsp_hw1 parallel_ranks_k_way_mergesort':
+
+    88,978,497,822      cycles
+   147,717,694,730      instructions                     #    1.66  insn per cycle
+       589,721,261      cache-references
+        84,007,683      cache-misses                     #   14.25% of all cache refs
+
+       2.947452121 seconds time elapsed
+
+      15.481088000 seconds user
+       4.331542000 seconds sys
