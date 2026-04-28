@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -184,8 +185,57 @@ Result benchmark(
     const Result &ref
 );
 
-int main() {
+int main(const int argc, const char *argv[]) {
     const int max_threads = omp_get_max_threads();
+
+    if (argc > 1) {
+        const char *type = argv[1];
+
+        omp_set_num_threads(max_threads);
+        constexpr int k = 32;
+        constexpr int g_threshold = 1 << 14;
+        constexpr int size = 26;
+
+        std::vector<int> array(1 << size);
+        int_generator<int> generate_int(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+        for (int &n: array) {
+            n = generate_int();
+        }
+
+        if (strcmp(type, "sequential_mergesort") == 0) {
+            sequential_mergesort(array);
+            return 0;
+        }
+
+        if (strcmp(type, "sequential_k_way_mergesort") == 0) {
+            sequential_k_way_mergesort(array, k);
+            return 0;
+        }
+
+        if (strcmp(type, "parallel_mergesort") == 0) {
+            parallel_mergesort(array, g_threshold);
+            return 0;
+        }
+
+        if (strcmp(type, "parallel_k_way_mergesort") == 0) {
+            parallel_k_way_mergesort(array, k, g_threshold);
+            return 0;
+        }
+
+        if (strcmp(type, "parallel_ranks_mergesort") == 0) {
+            parallel_ranks_mergesort(array, g_threshold);
+            return 0;
+        }
+
+        if (strcmp(type, "parallel_ranks_k_way_mergesort") == 0) {
+            parallel_ranks_k_way_mergesort(array, k, g_threshold);
+            return 0;
+        }
+
+        std::cerr << "invalid test type " << type << std::endl;
+        return 1;
+    }
+
     std::vector<int> threads;
 
     for (int t = 1; t <= max_threads; t *= 2) {
